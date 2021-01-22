@@ -12,6 +12,7 @@ pygame.display.set_caption('Tachanka')
 FPS = 50
 screen_rect = (0, 0, width, height)
 
+
 SPAWNENEMI = pygame.USEREVENT + 1
 pygame.time.set_timer(SPAWNENEMI, 4000)
 
@@ -42,6 +43,9 @@ ANIMATION_STAY =[
     'HEROGO3.png',
     'HEROGO3.png'
 ]
+f = open('text.txt', 'r')
+l = [line.strip() for line in f]
+f.close()
 
 def terminate():
     pygame.mixer.quit()
@@ -161,6 +165,7 @@ def defeat():
 
 
 def start_screen():
+    global l
     size1 = 800, 500
     screen = pygame.display.set_mode(size1)
     pygame.mixer.Sound('post.mp3').play(loops=-1)
@@ -190,12 +195,24 @@ def start_screen():
                     screen.blit(fon, (0, 0))
         arrow_group.update(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[-1])
         arrow_group.draw(screen)
+        intro_text = [f"Рекорд: {l[0]}"]
+        font = pygame.font.Font(None, 30)
+        text_coord = 0
+        for line in intro_text:
+            string_rendered = font.render(line, True, pygame.Color('white'))
+            intro_rect = string_rendered.get_rect()
+            text_coord += 5
+            intro_rect.top = text_coord
+            intro_rect.x = 600
+            text_coord += intro_rect.height
+            screen.blit(string_rendered, intro_rect)
         if not poss:
             all_sprites.update()
             screen.blit(fon, (0, 0))
             arrow_group.update(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[-1])
             arrow_group.draw(screen)
             all_sprites.draw(screen)
+
         pygame.display.flip()
         clock.tick(FPS)
 
@@ -222,11 +239,15 @@ class Enemi(Sprite):
             self.rect.x -= self.speed
         if self.hp <= 0:
             self.kill()
+            global bals
+            bals += 1000
         if not self.rect.colliderect(screen_rect):
             self.kill()
 
     def damages(self):
         self.hp -= 80
+        global bals
+        bals += 100
 
 
 class Boss(Sprite):
@@ -250,11 +271,15 @@ class Boss(Sprite):
         if self.hp <= 0:
             self.kill()
             boss = 0
+            global bals
+            bals += 4000
         if not self.rect.colliderect(screen_rect):
             self.kill()
 
     def damages(self):
         self.hp -= 80
+        global bals
+        bals += 100
 
 
 size_hero = 80, 120
@@ -451,6 +476,8 @@ pf.append(pladform)
 camera = Camera()
 hero = Player(200, 2, 20, (100, 530), 100, 530)
 boss = 0
+bals = 0
+count = 0
 while running:
     for event in pygame.event.get():
         create_arrow(pygame.mouse.get_pos())
@@ -461,10 +488,11 @@ while running:
             all_sprites_list.add(bul)
             bullets.append(bul)
         if event.type == SPAWNENEMI:
-            enem.append(Enemi(200, 1, 8, (100, 600), 100, 500))
+            enem.append(Enemi(200 + count, 1, int(8 + (count / 10)), (100, 600), 100, 500))
+            count += 1
             pass
         if event.type == SPAWNENEMIBOSS and boss == 0:
-            boss = Boss(800, 1, 8, (random.randint(800, 1000), 500), 900, 500)
+            boss = Boss(800, 1, 12, (random.randint(800, 1000), 500), 900, 500)
             enem.append(boss)
             print(enem)
             pass
@@ -518,6 +546,7 @@ while running:
     fon = pygame.transform.scale(load_image('fonmain.jpg'), (1300, 700))
     screen.blit(fon, (0, 0))
     intro_text = [f"Здоровье: {hero.heath}"]
+    intro_text.append(f"Счёт: {bals}")
     font = pygame.font.Font(None, 30)
     text_coord = 0
     for line in intro_text:
@@ -552,6 +581,10 @@ while running:
     all_sprites_list.draw(screen)
     clock.tick(FPS)
     pygame.display.flip()
+if bals > int(l[0]):
+    f = open('text.txt', 'w')
+    f.write(str(bals))
+    f.close()
 
 pygame.mixer.quit()
 pygame.quit()
